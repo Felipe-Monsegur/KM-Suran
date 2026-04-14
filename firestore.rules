@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUserAllowed() {
+      return isAuthenticated() &&
+        (exists(/databases/$(database)/documents/allowedUsers/$(request.auth.uid)) ||
+         exists(/databases/$(database)/documents/allowedUsers/$(request.auth.token.email)));
+    }
+
+    match /allowedUsers/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /userSettings/{userId} {
+      allow read, write: if isUserAllowed() && request.auth.uid == userId;
+    }
+
+    match /trips/{tripId} {
+      allow read: if isUserAllowed();
+      allow create: if isUserAllowed() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isUserAllowed();
+    }
+
+    match /fuelCharges/{chargeId} {
+      allow read: if isUserAllowed();
+      allow create: if isUserAllowed() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isUserAllowed();
+    }
+  }
+}

@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Sincronizado desde ThemeContext (headerColor según tema claro/oscuro) */
+:root {
+  --header-color: #5b21b6;
+}
+
+.btn-header-primary {
+  background-color: var(--header-color);
+  color: #fff;
+  transition: filter 0.15s ease;
+}
+.btn-header-primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.btn-header-primary:active:not(:disabled) {
+  filter: brightness(0.9);
+}
+.btn-header-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icono editar en panel: mismo acento que el header */
+.btn-panel-edit {
+  color: var(--header-color);
+  transition: background-color 0.15s ease;
+}
+.btn-panel-edit:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--header-color) 22%, transparent);
+}
+.btn-panel-edit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--header-color);
+}
+
+input.focus-ring-header:focus,
+textarea.focus-ring-header:focus,
+select.focus-ring-header:focus {
+  outline: none;
+  border-color: var(--header-color);
+  box-shadow: 0 0 0 2px var(--header-color);
+}
+
+input.accent-header {
+  accent-color: var(--header-color);
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #111827; /* gray-900 */
+  color: #f3f4f6; /* gray-100 */
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+
