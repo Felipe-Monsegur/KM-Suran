@@ -1,60 +1,79 @@
-# Movie-NaPi
+# KM Suran
 
-App web para compartir una **lista de películas por ver**, **puntuar** (1–10), **opinar** y ver un **panel** con la nota de cada persona y el **promedio**.
+Aplicación web para registrar uso del auto y costos de nafta, con balance estilo tricount.
 
-**Stack:** React 18, TypeScript, Vite, Tailwind CSS, Firebase (Authentication + Firestore + Hosting opcional).
+## Qué hace
 
----
+- Registrar viajes (usuario, km, fecha, descripción opcional).
+- Registrar cargas de nafta (usuario, monto, litros opcionales, fecha, descripción opcional).
+- Ver métricas generales: km totales, gasto total y costo promedio por km.
+- Calcular balance entre personas según uso real.
+- Administrar datos en tabla (`Datos`): filtrar, editar y borrar.
+- Exportar e importar backup JSON desde el menú hamburguesa en `Datos`.
 
-## Documentación en el repo
+## Lógica de balance (tricount)
 
-| Archivo | Contenido |
-|--------|-----------|
-| [INICIO_RAPIDO.md](./INICIO_RAPIDO.md) | Instalar, Firebase, primera ejecución |
-| [PUBLICAR.md](./PUBLICAR.md) | Build, Hosting, actualizar la app online |
-| [AGREGAR_USUARIOS.md](./AGREGAR_USUARIOS.md) | Lista blanca `allowedUsers` |
-| [COMO_FUNCIONA.md](./COMO_FUNCIONA.md) | Pantallas, datos en Firestore, flujo |
+El balance se calcula por tramos de consumo:
 
----
+- Cada carga de nafta se reparte por los km recorridos desde esa carga hasta la siguiente.
+- En cada tramo: `costo por km = monto de la carga / km del tramo`.
+- A cada persona se le asigna: `km personales del tramo * costo por km`.
+- Balance final por persona: `pagó en nafta - debería pagar`.
 
-## Inicio mínimo
+Resultado:
+- **A favor**: pagó más de lo que le correspondía por sus km.
+- **En contra**: pagó menos de lo que le correspondía por sus km.
+
+## Stack
+
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Firebase:
+  - Authentication
+  - Firestore
+  - Hosting
+
+## Instalación
 
 ```bash
 npm install
 copy src\config\firebase.example.ts src\config\firebase.ts
 ```
 
-Editá `src/config/firebase.ts` con la config de tu app web en Firebase Console.
+Configurá `src/config/firebase.ts` con tu proyecto Firebase.
+
+## Ejecutar local
 
 ```bash
 npm run dev
 ```
 
-Abrí `http://localhost:5173` o ejecutá `local.bat` (Windows).
+Abrir: `http://localhost:5173`
 
-**Firebase:** Auth (email/contraseña), Firestore, publicar reglas desde `firestore.rules`. Colección **`allowedUsers`** con el UID de cada quien (ver [AGREGAR_USUARIOS.md](./AGREGAR_USUARIOS.md)).
+También podés usar `local.bat` en Windows.
 
-**Proyecto Firebase de referencia:** `movie-napi` (podés usar otro; actualizá `firebase.ts` y `firebase use`).
+## Firestore y acceso
 
----
+- Reglas en: `firestore.rules`
+- Colecciones principales:
+  - `trips`
+  - `fuelCharges`
+  - `allowedUsers`
+  - `userSettings`
 
-## Publicar en internet
+Para permitir usuarios, agregar su UID/email en `allowedUsers`.
+
+## Build y deploy
 
 ```bash
 npm run build
 firebase deploy --only hosting,firestore:rules
 ```
 
-O `publicar.bat`. Detalle en [PUBLICAR.md](./PUBLICAR.md).
-
----
+O usar `publicar.bat`.
 
 ## Repositorio
 
-https://github.com/Felipe-Monsegur/Movie-NaPi
-
-`firebase.ts` y `.firebaserc` no se versionan (`.gitignore`); cada entorno copia `firebase.example.ts` y configura el CLI.
-
----
-
-Uso personal / privado.
+https://github.com/Felipe-Monsegur/KM-Suran
