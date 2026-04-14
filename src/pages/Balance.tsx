@@ -32,7 +32,17 @@ interface ChargeDetail {
   amount: number;
   segmentKm: number;
   costPerKm: number;
+  isClosedSegment: boolean;
   shares: ChargeUserShare[];
+}
+
+interface EstimatedBalance {
+  userId: string;
+  name: string;
+  totalKm: number;
+  totalPaid: number;
+  estimatedFairShare: number;
+  estimatedBalance: number;
 }
 
 function getEventTimestamp(value: { createdAt?: string; date?: string }): number {
@@ -150,6 +160,7 @@ export default function Balance() {
       amount: currentCharge.amount,
       segmentKm,
       costPerKm: costPerKmInSegment,
+      isClosedSegment: Boolean(nextCharge),
       shares,
     });
   }
@@ -165,6 +176,25 @@ export default function Balance() {
       balance: data.paid - fairShare,
     };
   }).sort((a, b) => b.balance - a.balance);
+
+  const lastClosedChargeWithKm = [...chargeDetails]
+    .reverse()
+    .find((detail) => detail.isClosedSegment && detail.segmentKm > 0);
+  const lastAnyChargeWithKm = [...chargeDetails].reverse().find((detail) => detail.segmentKm > 0);
+  const latestEstimatedCostPerKm = lastClosedChargeWithKm?.costPerKm ?? lastAnyChargeWithKm?.costPerKm ?? costPerKm;
+  const estimatedBalances: EstimatedBalance[] = Object.entries(userMap)
+    .map(([userId, data]) => {
+      const estimatedFairShare = data.km * latestEstimatedCostPerKm;
+      return {
+        userId,
+        name: data.name,
+        totalKm: data.km,
+        totalPaid: data.paid,
+        estimatedFairShare,
+        estimatedBalance: data.paid - estimatedFairShare,
+      };
+    })
+    .sort((a, b) => b.estimatedBalance - a.estimatedBalance);
 
   const debts: Debt[] = [];
   if (balances.length >= 2) {
@@ -281,6 +311,72 @@ export default function Balance() {
                       ? `A favor: pagó $${Math.abs(b.balance).toLocaleString('es-AR', { maximumFractionDigits: 0 })} más de lo que le corresponde`
                       : `En contra: debería haber pagado $${Math.abs(b.balance).toLocaleString('es-AR', { maximumFractionDigits: 0 })} más`
                     }
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className={cardClass}>
+        <h2 className={`text-lg font-bold mb-2 ${textPrimary}`}>Estimación con último precio por KM</h2>
+        <p className={`text-xs mb-4 ${textSecondary}`}>
+          {lastClosedChargeWithKm
+            ? `Usando el último tramo cerrado: ${formatDateForDisplay(lastClosedChargeWithKm.date)} (${lastClosedChargeWithKm.segmentKm.toLocaleString('es-AR', {
+                maximumFractionDigits: 2,
+              })} km).`
+            : lastAnyChargeWithKm
+            ? `No hay tramo cerrado todavía; se usa el tramo actual de ${formatDateForDisplay(lastAnyChargeWithKm.date)}.`
+            : 'No hay tramos con km todavía; se usa el promedio general actual.'}
+        </p>
+
+        <div className={`p-3 rounded-lg mb-4 ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+          <span className={`text-xs ${textSecondary}`}>Precio usado para estimar: </span>
+          <span className={`font-bold ${textPrimary}`}>
+            ${latestEstimatedCostPerKm.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / km
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {estimatedBalances.map((userEstimate) => {
+            const isPositive = userEstimate.estimatedBalance >= 0;
+            return (
+              <div
+                key={`estimate-${userEstimate.userId}`}
+                className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`font-semibold text-sm ${textPrimary}`}>{userEstimate.name}</span>
+                  <span className={`font-bold text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                    {isPositive ? '+' : ''}$
+                    {userEstimate.estimatedBalance.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+                <div className={`grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs ${textMuted}`}>
+                  <div>
+                    <div className={`font-medium ${textSecondary}`}>KM usados</div>
+                    <div className={`font-semibold ${textPrimary}`}>
+                      {userEstimate.totalKm.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className={`font-medium ${textSecondary}`}>Pagó en nafta</div>
+                    <div className="font-semibold text-green-500">
+                      ${userEstimate.totalPaid.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className={`font-medium ${textSecondary}`}>Debería pagar (estimado)</div>
+                    <div className={`font-semibold ${textPrimary}`}>
+                      ${userEstimate.estimatedFairShare.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className={`font-medium ${textSecondary}`}>Saldo estimado</div>
+                    <div className={`font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                      {isPositive ? 'A favor' : 'En contra'}
+                    </div>
                   </div>
                 </div>
               </div>
